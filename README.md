@@ -1,1 +1,2 @@
 # DSlab
+need ncurses library 
