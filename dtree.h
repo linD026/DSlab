@@ -2,7 +2,7 @@
 //  dtree.h
 //  DS_project
 //
-//  Created by 林志恩 on 2021/2/5.
+//  Created by lin zhien on 2021/2/5.
 //
 
 #ifndef dtree_h
