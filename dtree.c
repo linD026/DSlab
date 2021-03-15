@@ -160,6 +160,7 @@ void tree_get_in_type_menu(char *type, struct data_node *ditem){
         tree_max_heap(ditem);
     }
     else if (compare_and_choose(1, type, "min heap")){
+        tree_min_heap(ditem);
     }
     else if (compare_and_choose(1, type, "BST")){
     }
@@ -299,7 +300,7 @@ void tree_max_heap(struct data_node *head){
             tree_max_heap_push(head);
         }
         else if(compare_and_choose(1, input_buffer, "pop")){
-            
+            tree_max_heap_pop(head);
         }
         else if(compare_and_choose(1, input_buffer, "detail")){
             tree_detail(head);
@@ -332,13 +333,23 @@ void tree_max_heap_push(struct data_node *head){
     data_node_append(input, input_buffer, buff_num, NULL, NULL, "max heap push malloc failed.");
     while((num != 1) && (buff_num > head->node[num/2]->number)){
         head->node[num] = head->node[num/2];
-        head->node[num]->leftC = head->node[num*2];
-        head->node[num]->rightC = head->node[num*2+1];
+        if(num * 2 < head->number){
+            head->node[num]->leftC = head->node[num*2];
+            head->node[num]->rightC = head->node[num*2+1];
+        }else{
+            head->node[num]->leftC = NULL;
+            head->node[num]->rightC = NULL;
+        }
         num/=2;
     }
     head->node[num] = input;
-    head->node[num]->leftC = head->node[num*2];
-    head->node[num]->rightC = head->node[num*2+1];
+    if(num * 2 < head->number){
+        head->node[num]->leftC = head->node[num*2];
+        head->node[num]->rightC = head->node[num*2+1];
+    }else{
+        head->node[num]->leftC = NULL;
+        head->node[num]->rightC = NULL;
+    }
     if(num == 1)
         head->link = head->node[num];
     else if(num % 2 == 0)
@@ -347,4 +358,161 @@ void tree_max_heap_push(struct data_node *head){
         head->node[(num-1)/2]->rightC = head->node[num];
 }
 
-void tree_max_heap_pop(struct data_node *head);
+void tree_max_heap_pop(struct data_node *head){
+    if(head->node[1] == NULL){
+        print_list_boardcast_format(1, "heap is null");
+        return;
+    }
+    trash = ditem_trash_add(head->buffer, head->node[1], trash);
+    int num;
+    for(num = 1;num <= head->number;num++) if(head->node[num] == NULL) break; num--;
+    if(num == 1){
+        head->link = NULL;
+        head->node[1] = NULL;
+        return;
+    }
+    struct data_node *tem = head->node[num];
+    head->node[num--] = NULL;
+    int parent = 1;
+    int child = 2;
+    while(child <= num){
+        if(child < num && head->node[child]->number < head->node[child+1]->number) child++;
+        if(tem->number > head->node[child]->number) break;
+        head->node[parent] = head->node[child];
+        parent = child;
+        child*=2;
+    }
+    head->node[parent] = tem;
+    int i;
+    for(i = 1;i < pow(2,head->node[0]->tree_level - 1);i++){
+        if(head->node[i]){
+            head->node[i]->leftC = head->node[i*2];
+            head->node[i]->rightC = head->node[i*2+1];
+        }
+    }
+    for(;i < head->number;i++){
+        if(head->node[i]){
+            head->node[i]->leftC = NULL;
+            head->node[i]->rightC = NULL;
+        }
+    }
+    head->link = head->node[1];
+}
+
+void tree_min_heap(struct data_node *head){
+    TREE_TYPE_INITIAL
+    static int print_mod = TREE_PRINT_MOD_BUF;
+    print_title("min heap");
+    menu_print_max_heap();
+    while(CONTINUE){
+        graphic_print_tree(head, print_mod, TREE_INSERT_LINE, graphic_print_tree_node);
+        dtype_ditem_detail("min heap");
+        scan_list_print_format(input_buffer, "%s", input_name);
+        if(compare_and_choose(4, input_buffer, "m", "p", "print", "mode")){
+            do{scan_list_format("number(1) or integer buffer(2):", "%d", &print_mod);
+            }while(print_mod != TREE_PRINT_MOD_BUF && print_mod != TREE_PRINT_MOD_NUM);
+        }
+        else if(compare_and_choose(1, input_buffer, "push")){
+            tree_min_heap_push(head);
+        }
+        else if(compare_and_choose(1, input_buffer, "pop")){
+            tree_min_heap_pop(head);
+        }
+        else if(compare_and_choose(1, input_buffer, "detail")){
+            tree_detail(head);
+        }
+        else if(compare_and_choose(1, input_buffer, "clean")){
+            trash_clean(&recently_trash, &recently_detail);
+        }
+        MENU_ENDIF
+    }
+    graphic_refresh();
+    list_refresh();
+}
+
+void tree_min_heap_push(struct data_node *head){
+    int buff_num;
+    if(head->node[head->number]){
+        print_list_boardcast_format(1, "The heap is full.");
+        return;
+    }
+    int num;
+    for(num = 1;num <= head->number;num++) if(head->node[num] == NULL) break;
+    while(CONTINUE){
+        buff_num = max_buff_num + 1;
+        list_input_print("integer buffer (must below %td):%id", max_buff_num, &buff_num);
+        if(buff_num <= max_buff_num) break;
+        print_list_boardcast_format(1, "integer buffer input error.");
+    }
+    scan_list_print_format(input_buffer, "buffer:");
+    struct data_node* input = NULL;
+    data_node_append(input, input_buffer, buff_num, NULL, NULL, "min heap push malloc failed.");
+    while((num != 1) && (buff_num < head->node[num/2]->number)){
+        head->node[num] = head->node[num/2];
+        if(num * 2 < head->number){
+            head->node[num]->leftC = head->node[num*2];
+            head->node[num]->rightC = head->node[num*2+1];
+        }else{
+            head->node[num]->leftC = NULL;
+            head->node[num]->rightC = NULL;
+        }
+        num/=2;
+    }
+    head->node[num] = input;
+    if(num * 2 < head->number){
+        head->node[num]->leftC = head->node[num*2];
+        head->node[num]->rightC = head->node[num*2+1];
+    }else{
+        head->node[num]->leftC = NULL;
+        head->node[num]->rightC = NULL;
+    }
+    if(num == 1)
+        head->link = head->node[num];
+    else if(num % 2 == 0)
+        head->node[num/2]->leftC = head->node[num];
+    else
+        head->node[(num-1)/2]->rightC = head->node[num];
+}
+
+void tree_min_heap_pop(struct data_node *head){
+    if(head->node[1] == NULL){
+        print_list_boardcast_format(1, "heap is null");
+        return;
+    }
+    trash = ditem_trash_add(head->buffer, head->node[1], trash);
+    int num;
+    for(num = 1;num <= head->number;num++) if(head->node[num] == NULL) break; num--;
+    if(num == 1){
+        head->link = NULL;
+        head->node[1] = NULL;
+        return;
+    }
+    struct data_node *tem = head->node[num];
+    head->node[num--] = NULL;
+    int parent = 1;
+    int child = 2;
+    while(child <= num){
+        if(child < num && head->node[child]->number > head->node[child+1]->number) child++;
+        if(tem->number < head->node[child]->number) break;
+        head->node[parent] = head->node[child];
+        parent = child;
+        child*=2;
+    }
+    head->node[parent] = tem;
+    int i;
+    for(i = 1;i < pow(2,head->node[0]->tree_level - 1);i++){
+        if(head->node[i]){
+            head->node[i]->leftC = head->node[i*2];
+            head->node[i]->rightC = head->node[i*2+1];
+        }
+    }
+    for(;i < head->number;i++){
+        if(head->node[i]){
+            head->node[i]->leftC = NULL;
+            head->node[i]->rightC = NULL;
+        }
+    }
+    head->link = head->node[1];
+}
+
+

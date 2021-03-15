@@ -2,7 +2,7 @@
 //  dtree.h
 //  DS_project
 //
-//  Created by lin zhien on 2021/2/5.
+//  Created by 林志恩 on 2021/2/5.
 //
 
 #ifndef dtree_h
@@ -95,5 +95,11 @@ void tree_max_heap(struct data_node *head);
 void tree_max_heap_push(struct data_node *head);
 void tree_max_heap_pop(struct data_node *head);
 
+/*
+ * tree min heap function
+ */
+void tree_min_heap(struct data_node *head);
+void tree_min_heap_push(struct data_node *head);
+void tree_min_heap_pop(struct data_node *head);
 
 #endif /* dtree_h */

@@ -7,6 +7,7 @@
 #include "dstructure.h"
 #include "dstack.h"
 #include "dtree.h"
+#include "dgraph.h"
 #include "dwindow.h"
 
 /*
@@ -26,6 +27,7 @@ struct metadata* metadata_create(struct metadata *dlist, char *data_type){
     strncpy(tem->data_type, data_type, METADATA_BUFFER_SIZE);
     tem->data_type_num = 0;
     tem->head = NULL;
+    tem->graph_head = NULL;
     tem->next = NULL;
     *indirect = tem;
     return dlist;
@@ -58,6 +60,31 @@ struct metadata* ditem_create(struct metadata *dtype, char *name){
     return dtype;
 }
 
+struct metadata* ditem_graph_create(struct metadata *dtype, char *name){
+    struct ditem_graph **indirect = &dtype->graph_head;
+    for(;*indirect;indirect = &(*indirect)->next){
+        if(strncmp((*indirect)->name, name, METADATA_BUFFER_SIZE) == 0) return dtype;
+    }
+    struct ditem_graph *tem;
+    tem = (struct ditem_graph*)malloc(sizeof(*tem) + sizeof(struct graph_node*) * max_number_node);
+    if(!tem){print_graphic_format(1, "malloc graph ditem %s failed.\n", name); return dtype;}
+    tem->name = (char*)malloc(sizeof(char)*input_buffer_size);
+    if(!tem->name){print_graphic_format(1, "malloc graph ditem's dnode %s's buffer (name) failed.\n", name); return dtype;}
+    strncpy(tem->name, name, input_buffer_size);
+    tem->next = NULL;
+    tem->max_num = max_number_node;
+    tem->num = 0;
+    tem->global_temperature = 0;
+    tem->temperature_thresh = thresh_tempertature;
+    tem->energy = initial_enegry;
+    tem->overlappings = 0;
+    tem->crossing = 0;
+    *indirect = tem;
+    for(int i = 0;i < max_number_node;i++) tem->vector[i] = NULL;
+    dtype->data_type_num++;
+    return dtype;
+}
+
 struct data_node* dnode_next_search(struct data_node* ditem, char *name){
     struct data_node **indirect = &ditem;
     for(;*indirect;indirect = &(*indirect)->next){
@@ -75,18 +102,39 @@ struct data_node* ditem_delete(struct data_node *ditem, struct dnode_trash **tra
         struct data_node *target = *indirect;
         *indirect = (*indirect)->next;
         free(target->buffer);
-        target->buffer = NULL;
-        target->number = 0;
-        target->next = NULL;
-        struct data_node *ptr = target->link;
-        struct data_node *next = NULL;
-        for(;ptr;ptr = next){
-            free(ptr->buffer);
-            ptr->buffer = NULL;
-            ptr->number = 0;
-            next = ptr->link;
-            free(ptr);
+        if(target->node[0]){
+            for(int i = target->number;i >= 0;i--){
+                if(target->node[i]){
+                    free(target->node[i]->buffer);
+                    target->node[i]->buffer = NULL;
+                    target->node[i]->number = 0;
+                    target->node[i]->next = NULL;
+                    target->node[i]->link = NULL;
+                    free(target->node[i]);
+                    target->node[i] = NULL;
+                }
+            }
+            target->link = NULL;
+            target->buffer = NULL;
+            target->number = 0;
+            target->next = NULL;
         }
+        else{
+            target->buffer = NULL;
+            target->number = 0;
+            target->next = NULL;
+            struct data_node *ptr = target->link;
+            struct data_node *next = NULL;
+            for(;ptr;ptr = next){
+                free(ptr->buffer);
+                ptr->buffer = NULL;
+                ptr->number = 0;
+                next = ptr->link;
+                free(ptr);
+            }
+        }
+        free(target);
+        target = NULL;
     }
     if(*trash){
         struct dnode_trash **indirect_t = &(*trash);
@@ -106,6 +154,7 @@ struct data_node* ditem_delete(struct data_node *ditem, struct dnode_trash **tra
 struct dnode_trash* ditem_trash_add(char *name, struct data_node *item, struct dnode_trash *trash){
     struct dnode_trash **ptr = &trash;
     item->link = NULL;
+    item->next = NULL;
     for(;*ptr;ptr=&(*ptr)->next){
         if(strncmp(name, (*ptr)->name, input_buffer_size) == 0){
             (*ptr)->trash_num++;
@@ -114,14 +163,17 @@ struct dnode_trash* ditem_trash_add(char *name, struct data_node *item, struct d
             return trash;
         }
     }
-    (*ptr) = (struct dnode_trash*)malloc(sizeof(struct dnode_trash));
-    if(!(*ptr)){print_graphic_format(1, "malloc trash dnode %s failed.\n", name);return trash;}
-    (*ptr)->name = (char*)malloc(sizeof(char)*input_buffer_size);
-    if(!(*ptr)->name){print_graphic_format(1, "malloc trash dnode %s's name failed.\n", name);return trash;}
-    strncpy((*ptr)->name, name, input_buffer_size);
-    (*ptr)->trash_num = 1;
-    (*ptr)->head = item;
-    (*ptr)->next = NULL;
+    struct dnode_trash *tem = NULL;
+    tem = (struct dnode_trash*)malloc(sizeof(struct dnode_trash));
+    if(!tem){print_graphic_format(1, "malloc trash dnode %s failed.\n", name);return trash;}
+    tem->name = NULL;
+    tem->name = (char*)malloc(sizeof(char)*input_buffer_size);
+    if(!tem->name){print_graphic_format(1, "malloc trash dnode %s's name failed.\n", name);return trash;}
+    strncpy(tem->name, name, input_buffer_size);
+    tem->trash_num = 1;
+    tem->head = item;
+    tem->next = NULL;
+    *ptr = tem;
     return trash;
 }
 
@@ -131,7 +183,7 @@ void trash_clean(struct dnode_trash **dtype, struct dnode_detail **detail){
     (*dtype)->head = NULL;
     struct data_node *next = NULL;
     for(;ptr;ptr = next){
-        if(*detail){
+        if(detail){
             if((*detail)->node_item == ptr) (*detail)->node_item = NULL;
             if((*detail)->trash_item == ptr) (*detail)->trash_item = NULL;
         }
@@ -211,3 +263,4 @@ struct dnode_detail* detail_item_search(struct dnode_detail *detail, char *buffe
         return detail;
     }
 }
+

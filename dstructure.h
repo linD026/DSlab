@@ -39,12 +39,32 @@ static struct dnode_detail *detail = NULL;\
 #define CHECK_FIRST_TIME_GET_IN(DTYPE, ADD_FUNC)\
     if(first_time_get_in){\
         int det = 0;\
-        print_graphic_format(2, "get in %s\nsearching stack node in dlist\n", #DTYPE);\
+        print_graphic_format(2, "get in %s\nsearching %s node in dlist\n", #DTYPE, #DTYPE);\
         d##DTYPE = metadata_search(dlist, #DTYPE);\
         if(d##DTYPE == NULL) {print_graphic(1, "search set failed\n");det++;}\
         print_graphic(1, "search finished\n");\
         print_graphic(1, "setting detail\n");\
         current_node = (struct data_node**)malloc(sizeof(**current_node));\
+        if(current_node == NULL){ print_graphic(1, "detail set failed\n");det++;}\
+        print_graphic(1, "set detail finished\n");\
+        det = det + ADD_FUNC;\
+        if(det == 0){first_time_get_in = TERMINATED;\
+            print_graphic_format(1, "welcome to %s menu page\n", #DTYPE);\
+        }\
+        else{\
+            free(d##DTYPE); d##DTYPE == NULL; free(current_node); current_node = NULL;\
+        }\
+    }
+
+#define GRAPH_CHECK_FIRST_TIME_GET_IN(DTYPE, ADD_FUNC)\
+    if(first_time_get_in){\
+        int det = 0;\
+        print_graphic_format(2, "get in %s\nsearching %s node in dlist\n", #DTYPE, #DTYPE);\
+        d##DTYPE = metadata_search(dlist, #DTYPE);\
+        if(d##DTYPE == NULL) {print_graphic(1, "search set failed\n");det++;}\
+        print_graphic(1, "search finished\n");\
+        print_graphic(1, "setting detail\n");\
+        current_node = (struct ditem_graph**)malloc(sizeof(**current_node));\
         if(current_node == NULL){ print_graphic(1, "detail set failed\n");det++;}\
         print_graphic(1, "set detail finished\n");\
         det = det + ADD_FUNC;\
@@ -105,6 +125,7 @@ struct metadata{
     char *data_type;
     int data_type_num;
     struct data_node *head;
+    struct ditem_graph *graph_head;
     struct metadata *next;
 };
 
@@ -131,6 +152,7 @@ struct metadata* metadata_create(struct metadata *dlist, char *data_type);
  * dtype create the ditem
  */
 struct metadata* ditem_create(struct metadata *dtype, char *name);
+struct metadata* ditem_graph_create(struct metadata *dtype, char *name);
 
 /*
  * ditem create dnode(head) connected noraml(ditem) with link, both child dnode connected with next, if already has it do nothing
@@ -179,13 +201,13 @@ void trash_clean(struct dnode_trash **dtype, struct dnode_detail **detail);
 
 /*
  * search ditem's detail at detail list.
- * taret can be in ditem or trash, det is check which one is it.
+ * tagret can be in ditem or trash, det is check which one is it.
  * for example in dstask.c function stack:
  *  ditem :
  *      detail = detail_item_search(detail, head->buffer, dnode_link_search(head->link, input_buffer), IS_NODE);
  *  trash :
  *      detail = detail_item_search(detail, head->buffer, dnode_link_search(recently_trash->head, input_buffer), IS_TRASH);
- * does not find out the ditem's detail's node will create.
+ * does not find out the ditem detail's node then will create.
  */
 struct dnode_detail* detail_item_search(struct dnode_detail *detail, char *buffer, struct data_node *target, int det);
 

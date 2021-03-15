@@ -10,6 +10,7 @@
 #include "dstructure.h"
 #include "dstack.h"
 #include "dtree.h"
+#include "dgraph.h"
 
 int input_buffer_size = 0;
 char *input_buffer = NULL;
@@ -47,6 +48,11 @@ int welcome(void){
         }
         else if (compare_and_choose(2, input_buffer, "g", "graph")){
             print_graphic(1, "get in graph menu\n");
+            dlist = metadata_create(dlist, "graph");
+            dlist = graph_menu(dlist);
+            graphic_refresh();
+            print_title("menu");
+            menu_print_main_menu();
         }
         else if(MENU_LIST_CHOOSE_EXIT){
             endwin();
