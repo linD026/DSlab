@@ -16,7 +16,7 @@ This is the data structure graphical display project.
 
 ---
 
-# progess
+# progress
 
 * stack	done
 * queue --
